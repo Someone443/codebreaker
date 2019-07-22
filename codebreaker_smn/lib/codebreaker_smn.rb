@@ -6,6 +6,13 @@ require 'yaml'
 module CodebreakerSmn
   class Game
     include ValidationHelper
+    # Codebreaker class
+    # Codemaker class
+    # DB Helper class/module
+    # Stats class
+    # Output class -> logic regarding returning messages on errors/hints/help/etc.
+    # Validation class
+    # Custom errors class    
 
     DIFFICULTIES = {
                    easy: {attempts: 15, hints: 2}, 
@@ -14,7 +21,7 @@ module CodebreakerSmn
                  }
 
     attr_reader :code, :state, :difficulty
-    attr_accessor :username, :results
+    attr_accessor :username, :attempts, :hints, :results
 
     def initialize
       new_game
@@ -39,13 +46,13 @@ module CodebreakerSmn
       @state = :game_over
     end
 
-    def load_results
+    def load_results # TODO!!!!   db path should be provided from Console 
       YAML.load_file('./db/results.yml')
         rescue SystemCallError
       []
     end
 
-    def save_results
+    def save_results # TODO!!!!
       if @state == :win
 
         attempts_total = DIFFICULTIES[@difficulty.to_sym][:attempts]
@@ -58,17 +65,33 @@ module CodebreakerSmn
                    attempts_total: attempts_total,
                    attempts_used: attempts_used,
                    hints_total: hints_total,
-                   hints_used: hints_used}
+                   hints_used: hints_used,
+                   date: Date.today}
 
         File.write('./db/results.yml', @results.to_yaml)
       end
     end
 
-    def high_scores
-      puts 'Name, Difficulty, Attempts Total, Attempts Used, Hints Total, Hints Used'
-      @results.each do |result|  
-        puts %Q(#{result[:name]} #{result[:difficulty]} #{result[:attempts_total].to_s} #{result[:attempts_used].to_s} #{result[:hints_total].to_s} #{result[:hints_used].to_s})
-      end
+    def high_scores # TODO!!!!
+      attempts_total = DIFFICULTIES[@difficulty.to_sym][:attempts]
+      attempts_used = attempts_total - @attempts
+      hints_total = DIFFICULTIES[@difficulty.to_sym][:hints]
+      hints_used = hints_total - @hints
+
+      { name: @username,
+        difficulty: @difficulty, 
+        attempts_total: attempts_total,
+        attempts_used: attempts_used,
+        hints_total: hints_total,
+        hints_used: hints_used,
+        date: Date.today }
+
+      # This method should combine and sort stat inside @results var and just return this @results var 
+      # We should return @results from just last game -> Console or Web app should form Stat on its own
+      #puts 'Name, Difficulty, Attempts Total, Attempts Used, Hints Total, Hints Used'
+      #@results.each do |result|  
+      #  puts %Q(#{result[:name]} #{result[:difficulty]} #{result[:attempts_total].to_s} #{result[:attempts_used].to_s} #{result[:hints_total].to_s} #{result[:hints_used].to_s})
+      #end
     end
 
     def generate_code
@@ -83,6 +106,7 @@ module CodebreakerSmn
         result = process_guess(input)
         win if result == "++++"
       elsif @attempts == 1 && @state == :started
+        @attempts -= 1
         result = process_guess(input)
         result == "++++" ? win : game_over
       else
@@ -109,16 +133,16 @@ module CodebreakerSmn
       end
 
       temp_code.each_with_index do |char, index|  
-        if input.include?(char.to_s)
+        if input.include?(char.to_s) # input.uniq.include? or temp_code.uniq.include?
           result << "-"
-          temp_code[index] = nil # Wrong output when code = 1455, input = 5133
-        end
+          temp_code[index] = nil # We have to check if char is one in the input or several -> count of matches in input
+        end                      # code = 1455, input = 5133
       end
 
       result
     end
 
-    def get_hint
+    def get_hint # TODO!
       if @hints > 0 && @state == :started
         @hints -= 1
         code.sample
@@ -136,7 +160,6 @@ module CodebreakerSmn
     private
 
     attr_writer :code, :state, :difficulty
-    attr_accessor :attempts, :hints
 
     def reset_params
       @username, @difficulty = nil
