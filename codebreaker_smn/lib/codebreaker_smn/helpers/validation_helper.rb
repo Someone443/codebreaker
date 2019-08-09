@@ -2,36 +2,39 @@
 
 # Validate parameters
 module ValidationHelper
-
   def valid_name?(username)
     not_empty_string(username) && valid_username_length(username)
   end
 
-  def validate_guess(input)
-
-    input.split("").each { |char| positive_integer(char.to_i) }
-
-    valid_guess_length(input)
-    valid_digits(input)
+  def valid_difficulty?(level, difficulty_array)
+    difficulty_array.include?(level)
   end
-  
+
+  def valid_guess?(input)
+    positive_integers(input) && valid_guess_length(input) && valid_digits(input)
+  end
+
   def not_empty_string(input)
-    (input.is_a? String) && !(input.empty?)
+    (input.is_a? String) && !input.empty?
   end
 
   def valid_username_length(username)
     username.size.between?(3, 20)
   end
 
+  def positive_integers(input)
+    not_empty_string(input) && input.split('').all? { |char| positive_integer(char.to_i) }
+  end
+
   def positive_integer(input)
-    raise ValidationError unless (input.is_a? Integer) && (input.positive?)
+    (input.is_a? Integer) && input.positive?
   end
 
   def valid_guess_length(input)
-    raise ValidationError if !(input.size.eql?(4))
+    input.size.eql?(4)
   end
 
   def valid_digits(input)
-    raise ValidationError if !(input.match(/[1-6]+/))
+    input.match(/[1-6]+/)
   end
-end 
+end

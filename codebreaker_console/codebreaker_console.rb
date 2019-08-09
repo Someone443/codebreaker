@@ -1,19 +1,16 @@
-require "codebreaker_smn"
-require_relative './helpers/output'
+# frozen_string_literal: true
 
 class CodebreakerConsole
-  include Output
-
-  DIFFICULTIES = ['easy', 'medium', 'hell']
+  include Validations
 
   attr_reader :game
 
   def initialize
     @game = CodebreakerSmn::Game.new
   end
-  
+
   def init
-    init_message
+    Messages.init
     loop do
       run
     end
@@ -24,11 +21,11 @@ class CodebreakerConsole
     when :new then new_game
     when :started then start
     when :win
-      win_message(@game.code.join)
+      Messages.win(@game.code.join)
       save_results
       new_game
     when :game_over
-      game_over_message(@game.code.join)
+      Messages.game_over(@game.code.join)
       new_game
     end
   end
@@ -36,85 +33,76 @@ class CodebreakerConsole
   def new_game
     @game.new_game
 
-    welcome_message
+    Messages.welcome
     case gets.chomp
-    when 'start' 
+    when 'start'
       @game.start
       start
-    when 'rules' then rules
-    when 'stats' then stats
+    when 'rules' then Messages.rules
+    when 'stats' then Statistics.show
     when 'exit' then exit_game
-    else unknown_command_message
+    else Messages.unknown_command
     end
   end
 
   def start
     registration
-    if @game.username && @game.difficulty
-      start_game_message
-      input = gets.chomp
-      case input
-      when /^[1-6]{4}$/ then puts @game.guess_code(input)
-      when 'hint' then puts @game.get_hint
-      when 'exit' then exit_game
-      else unknown_command_message
-      end
+    return unless @game.username && @game.difficulty
+
+    Messages.start_game
+    input = gets.chomp
+    case input
+    when /^[1-6]{4}$/ then puts @game.guess_code(input)
+    when 'hint' then puts @game.get_hint
+    when 'exit' then exit_game
+    else Messages.unknown_command
     end
   end
 
   def registration
-    unless @game.username
-      set_username
-    else
+    if @game.username
       set_difficulty unless @game.difficulty
+    else
+      set_username
     end
   end
 
   def set_username
-    set_username_message
+    Messages.set_username
     input = gets.chomp
 
     case input
     when 'exit' then exit_game
     else
-      if @game.valid_name?(input)
+      if valid_name?(input)
         @game.username = input
       else
-        invalid_username_message
+        Messages.invalid_username
       end
     end
   end
 
   def set_difficulty
-    set_difficulty_message
+    Messages.set_difficulty
     level = gets.chomp
 
     case level
     when 'exit' then exit_game
-    else
-      @game.set_difficulty(level) if DIFFICULTIES.include?(level)
+    else @game.difficulty = level if valid_difficulty?(level, @game.class::DIFFICULTIES.keys.map(&:to_s))
     end
   end
 
-  def rules
-    rules_text
-  end
-
-  def stats # This method should take stat from @results var, format it and put into console
-    puts @game.high_scores
-  end
-
   def save_results
-    save_results_message
+    Messages.save_results
     case gets.chomp
-    when /^y|yes$/
-      @game.save_results
-      results_saved_message
+    when /^[Yy]|[Yy]es$/
+      Statistics.save(@game.high_scores)
+      Messages.results_saved
     end
   end
 
   def exit_game
-    exit_game_message
+    Messages.exit_game
     exit
   end
 end

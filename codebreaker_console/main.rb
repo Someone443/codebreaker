@@ -1,5 +1,5 @@
 # frozen_string_literal: true
 
-require "./codebreaker_console.rb"
+require_relative 'config/setup'
 
 CodebreakerConsole.new.init

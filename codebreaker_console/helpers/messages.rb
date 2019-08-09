@@ -1,61 +1,60 @@
-module Output
-
-  def init_message
-    puts "Welcome to Codebreaker game."
+class Messages
+  def self.init
+    puts 'Welcome to Codebreaker game.'
   end
 
-  def welcome_message
+  def self.welcome
     puts "Please, enter 'start' to start new game,\n" \
          "'rules' to read game rules,\n" \
          "'stats' to display high scores,\n" \
          "'exit' to exit the game."
   end
 
-  def start_game_message
-    puts "Please, enter the code"
+  def self.start_game
+    puts "Please, enter the code. Enter 'hint' to get a digit from the code"
   end
 
-  def set_username_message
+  def self.set_username
     puts 'Please, enter your name'
   end
 
-  def invalid_username_message
+  def self.invalid_username
     puts "Please, enter correct name. \n" \
-         "It should be from 3 to 20 symbols long."
+         'It should be from 3 to 20 symbols long.'
   end
 
-  def set_difficulty_message
+  def self.set_difficulty
     puts "Please, enter game difficulty: \n" \
          "'easy' - 15 attempts, 2 hints \n" \
          "'medium' - 10 attempts, 1 hint \n" \
          "'hell' - 5 attempts, 1 hint"
   end
 
-  def win_message(code)
+  def self.win(code)
     puts "Congratulations, you guessed the code #{code}!"
   end
 
-  def game_over_message(code)
+  def self.game_over(code)
     puts "Sorry, you didn't guess the code #{code} this time. Try again?"
   end
 
-  def save_results_message
-    puts "Would you like to save results?"
+  def self.save_results
+    puts 'Would you like to save results? [yes/no]'
   end
 
-  def results_saved_message
-     puts "Your results have been saved."
+  def self.results_saved
+    puts 'Your results have been saved.'
   end
 
-  def exit_game_message
-     puts 'Thanks for playing our game!'
+  def self.exit_game
+    puts 'Thanks for playing our game!'
   end
 
-  def unknown_command_message
+  def self.unknown_command
     puts 'You have passed an unexpected command.'
   end
 
-  def rules_text
+  def self.rules
     puts "---------------------------------\n" \
          "Codebreaker is a logic game in which a code-breaker tries to break a secret code \n" \
          "created by a code-maker. The codemaker creates a secret code of four numbers between 1 and 6. \n" \
@@ -75,8 +74,8 @@ module Output
          "An empty space indicates that there is not a current digit in a secret number.\n" \
          "If codebreaker inputs the exact number as a secret number - codebreaker wins the game. \n" \
          "If all attempts are spent - codebreaker loses.\n" \
-         "Codebreaker also has some number of hints(depends on chosen difficulty). \n" \
+         "Codebreaker also has some number of hints (depends on chosen difficulty). \n" \
          "If a user takes a hint - he receives back a separate digit of the secret code.\n" \
-         "---------------------------------"
+         '---------------------------------'
   end
 end
