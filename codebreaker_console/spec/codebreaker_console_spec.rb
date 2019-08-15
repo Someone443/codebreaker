@@ -1,7 +1,7 @@
 RSpec.describe CodebreakerConsole do
   let(:console) { described_class.new }
   let(:commands) { described_class::COMMANDS }
-  
+
   let(:code) { console.game.code.join }
 
   let(:valid_username) { 'username' }
@@ -42,7 +42,7 @@ RSpec.describe CodebreakerConsole do
       valid_difficulties.each do |valid_difficulty|
         allow(console).to receive(:gets).and_return(valid_difficulty)
         console.set_difficulty
-        expect(console.game.difficulty).to eq(valid_difficulty)
+        expect(console.game.difficulty.to_s).to eq(valid_difficulty)
       end
     end
 
@@ -78,7 +78,7 @@ RSpec.describe CodebreakerConsole do
       console.game.username = valid_username
       allow(console).to receive(:gets).and_return(valid_difficulties.first)
       console.set_difficulty
-      console.game.win
+      console.game.send(:win)
 
       allow(console).to receive(:gets).and_return('user1')
       expect { console.run }.to output(Messages.win(code)).to_stdout
@@ -89,7 +89,7 @@ RSpec.describe CodebreakerConsole do
       console.game.username = valid_username
       allow(console).to receive(:gets).and_return(valid_difficulties.first)
       console.set_difficulty
-      console.game.game_over
+      console.game.send(:game_over)
 
       allow(console).to receive(:gets).and_return('user1')
       expect { console.run }.to output(Messages.game_over(code)).to_stdout
@@ -167,7 +167,7 @@ RSpec.describe CodebreakerConsole do
       console.game.username = valid_username
       allow(console).to receive(:gets).and_return(valid_difficulties.first)
       console.set_difficulty
-      console.game.win
+      console.game.send(:win)
       allow(console).to receive(:gets).and_return(commands[:yes])
       expect { console.save_results }.to output(Messages.results_saved).to_stdout
     end

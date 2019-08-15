@@ -18,7 +18,7 @@ module CodebreakerSmn
     WIN_RESULT = '++++'.freeze
 
     attr_reader :code, :state, :difficulty, :username
-    attr_accessor :attempts, :hints, :hint_code
+    attr_accessor :attempts, :hints
 
     def initialize
       new_game
@@ -34,15 +34,7 @@ module CodebreakerSmn
       @state = :started
     end
 
-    def win
-      @state = :win
-    end
-
-    def game_over
-      @state = :game_over
-    end
-
-    def high_scores
+    def statistics
       attempts_total = DIFFICULTIES[@difficulty][:attempts]
       attempts_used = attempts_total - @attempts
       hints_total = DIFFICULTIES[@difficulty][:hints]
@@ -53,59 +45,17 @@ module CodebreakerSmn
         date: Date.today }
     end
 
-    def generate_code
-      @code = Array.new(CODE_RULES[:size]) { rand(CODE_RULES[:digits]) }
-    end
-
-    def generate_hint
-      @hint_code = @code.sample(DIFFICULTIES[@difficulty][:hints])
-    end
-
     def guess_code(input)
       return unless valid_guess?(input)
 
-      result = ''
-      if @attempts > 1 && @state == :started
-        @attempts -= 1
-        result = CodeHandler.process_guess(@code, input)
-        select_winner(result, @attempts)
-      elsif @attempts == 1 && @state == :started
-        @attempts -= 1
-        result = CodeHandler.process_guess(@code, input)
-        select_winner(result, @attempts)
-
-
-        # return win if winner?(result)
-
-        # game_over   -> т.е. изпользовать guard clause на последней попытке и не нужен будет последний else ???
-      else
-        game_over
-      end
-      result
-    end
-
-
-
-    def many_attempts?
-      @attempts > 1 && @state == :started
-    end
-
-    def last_attempt?
-      @attempts == 1 && @state == :started
-    end
-
-
-
-    def select_winner(result, attempts)
-      if attempts.positive?
-        win if result == WIN_RESULT
-      else
-        result == WIN_RESULT ? win : game_over
+      CodeHandler.process_guess(@code, input) do |result|
+        select_winner(result)
+        take_attempt
       end
     end
 
     def get_hint
-      result = @hint_code || generate_hint
+      result = hint_code
       if @hints.positive? && @state == :started
         @hints -= 1
         result.pop
@@ -131,6 +81,48 @@ module CodebreakerSmn
     private
 
     attr_writer :code, :state
+
+    def win
+      @state = :win
+    end
+
+    def game_over
+      @state = :game_over
+    end
+
+    def generate_code
+      @code = Array.new(CODE_RULES[:size]) { rand(CODE_RULES[:digits]) }
+    end
+
+    def hint_code
+      @hint_code ||= @code.sample(DIFFICULTIES[@difficulty][:hints])
+    end
+
+    def select_winner(result)
+      if many_attempts?
+        win if winner?(result)
+      elsif last_attempt?
+        winner?(result) ? win : game_over
+      else
+        game_over
+      end
+    end
+
+    def take_attempt
+      @attempts -= 1
+    end
+
+    def many_attempts?
+      @attempts > 1 && @state == :started
+    end
+
+    def last_attempt?
+      @attempts == 1 && @state == :started
+    end
+
+    def winner?(result)
+      result == WIN_RESULT
+    end
 
     def reset_params
       @username, @difficulty, @hint_code = nil

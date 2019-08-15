@@ -6,7 +6,11 @@ module CodebreakerSmn
       temp_code = code.clone
       input = input.split('').map(&:to_i)
 
-      plus(temp_code, input) + minus(temp_code, input)
+      result = plus(temp_code, input) + minus(temp_code, input)
+
+      yield(result)
+
+      result
     end
 
     def self.plus(code, input)

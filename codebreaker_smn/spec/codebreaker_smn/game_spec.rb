@@ -2,12 +2,17 @@ require 'spec_helper'
 
 RSpec.describe CodebreakerSmn::Game do
   let(:game) { described_class.new }
+  let(:game_difficulties) { game.class::DIFFICULTIES }
+  let(:hinted_digit) { game.get_hint }
+
   let(:game_code) { [1, 2, 3, 4] }
   let(:win_guess) { '1234' }
   let(:invalid_guesses) { ['', 'zz', '123', '11234', '7890', Object] }
 
   let(:valid_username) { 'valid_username' }
-  let(:valid_difficulty) { 'easy' }
+  let(:invalid_username) { 'qz' }  
+  let(:valid_difficulty) { game_difficulties.keys.sample }
+  let(:invalid_difficulty) { 'zz' }
 
   before do
     game.new_game
@@ -18,15 +23,15 @@ RSpec.describe CodebreakerSmn::Game do
 
   context 'with #start' do
     it 'generates secret code' do
-      expect(game.instance_variable_get(:@code)).not_to be_empty
+      expect(game.code).not_to be_empty
     end
 
     it 'saves secret code with size from code rules' do
-      expect(game.instance_variable_get(:@code).size).to eq(described_class::CODE_RULES[:size])
+      expect(game.code.size).to eq(described_class::CODE_RULES[:size])
     end
 
     it 'saves secret code with numbers from code rules' do
-      game.instance_variable_get(:@code).each do |digit| 
+      game.code.each do |digit|
         expect(described_class::CODE_RULES[:digits]).to include(digit)
       end
     end
@@ -48,30 +53,28 @@ RSpec.describe CodebreakerSmn::Game do
     end
 
     context 'when processes user guesses' do
-      let(:examples_1) do
-        { code: [6, 5, 4, 3], inputs: %w[5643 6411 6544 3456 6666 2666 2222],
-          expected_results: ['++--', '+-', '+++', '----', '+', '-', ''] }
-      end
-      let(:examples_2) do
-        { code: [6, 6, 6, 6], inputs: ['1661'], expected_results: ['++'] }
-      end
-      let(:examples_3) do
-        { code: [1, 2, 3, 4], inputs: %w[3124 1524 1234],
-          expected_results: ['+---', '++-', '++++'] }
-      end
-      let(:examples_4) do
-        { code: [1, 4, 5, 5], inputs: ['5133'], expected_results: ['--'] }
+      let(:examples) do
+        [
+          { code: [6, 5, 4, 3], inputs: %w[5643 6411 6544 3456 6666 2666 2222],
+            expected_results: ['++--', '+-', '+++', '----', '+', '-', ''] },
+          { code: [6, 6, 6, 6], inputs: ['1661'],
+            expected_results: ['++'] },
+          { code: [1, 2, 3, 4], inputs: %w[3124 1524 1234],
+            expected_results: ['+---', '++-', '++++'] },
+          { code: [1, 4, 5, 5], inputs: ['5133'],
+            expected_results: ['--'] }
+        ]
       end
 
       it 'from examples' do
-        [examples_1, examples_2, examples_3, examples_4].each do |hash|
+        examples.each do |example|
           game.start
           game.username = valid_username
           game.difficulty = valid_difficulty
-          game.instance_variable_set(:@code, hash[:code])
+          game.instance_variable_set(:@code, example[:code])
 
-          hash[:inputs].each_with_index do |input, index|
-            expect(game.guess_code(input)).to eq(hash[:expected_results][index])
+          example[:inputs].each_with_index do |input, index|
+            expect(game.guess_code(input)).to eq(example[:expected_results][index])
           end
         end
       end
@@ -80,33 +83,35 @@ RSpec.describe CodebreakerSmn::Game do
     context "when processes user's last attempt" do
       it do
         game.instance_variable_set(:@code, game_code)
-        game.send('attempts=', 1)
-        expect(game.guess_code(win_guess)).to eq('++++')
+        game.instance_variable_set(:@attempts, 1)
+        expect(game.guess_code(win_guess)).to eq(described_class::WIN_RESULT)
       end
     end
   end
 
   context 'with #get_hint' do
     it 'returns digit if hints available' do
-      expect(game.get_hint.to_s).to match(/^[1-6]{1}$/)
+      expect(hinted_digit.to_s.size).to eq(1)
+      expect(described_class::CODE_RULES[:digits]).to include(hinted_digit)
     end
 
     it 'returns warning if hints unavailable' do
-      game.send('hints=', 0)
-      expect(game.get_hint.to_s).to eq('No hints left!')
+      game.instance_variable_set(:@hints, 0)
+      expect(hinted_digit.to_s).to eq('No hints left!')
     end
 
     it 'returns digit from the code' do
-      expect(game.code).to include(game.get_hint)
+      expect(game.code).to include(hinted_digit)
     end
   end
 
-  context 'with #high_scores' do
+  context 'with #statistics' do
     it 'returns current results' do
       game.guess_code(win_guess)
-      expect(game.high_scores.to_s).to eq({ name: valid_username, difficulty: valid_difficulty,
-                                            attempts_total: 15, attempts_used: 1,
-                                            hints_total: 2, hints_used: 0, date: Date.today }.to_s)
+      expect(game.statistics.to_s).to eq({ name: valid_username, difficulty: valid_difficulty.to_s,
+                                           attempts_total: game_difficulties[valid_difficulty][:attempts],
+                                           attempts_used: 1, hints_total: game_difficulties[valid_difficulty][:hints],
+                                           hints_used: 0, date: Date.today }.to_s)
     end
   end
 
@@ -128,7 +133,7 @@ RSpec.describe CodebreakerSmn::Game do
 
     it 'is :game_over when no more attempts' do
       game.instance_variable_set(:@code, game_code)
-      game.send('attempts=', 0)
+      game.instance_variable_set(:@attempts, 0)
       game.guess_code(win_guess)
       expect(game.state).to eq(:game_over)
     end
@@ -141,7 +146,7 @@ RSpec.describe CodebreakerSmn::Game do
 
     it 'when invalid name' do
       game.new_game
-      game.username = 'zz'
+      game.username = invalid_username
       expect(game.username).to be_nil
     end
   end
@@ -157,7 +162,7 @@ RSpec.describe CodebreakerSmn::Game do
 
     it 'when invalid difficulty' do
       game.new_game
-      game.difficulty = 'zz'
+      game.difficulty = invalid_difficulty
       expect(game.difficulty).to be_nil
     end
   end

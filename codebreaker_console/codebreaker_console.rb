@@ -104,11 +104,10 @@ class CodebreakerConsole
 
   def save_results
     Messages.save_results
-    case user_input
-    when COMMANDS[:yes]
-      Statistics.save(@game.high_scores)
-      Messages.results_saved
-    end
+    return if user_input != COMMANDS[:yes]
+
+    Statistics.save(@game.statistics)
+    Messages.results_saved
   end
 
   def user_input
