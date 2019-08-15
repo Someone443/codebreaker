@@ -1,11 +1,13 @@
 RSpec.describe CodebreakerConsole do
   let(:console) { described_class.new }
+  let(:commands) { described_class::COMMANDS }
+  
   let(:code) { console.game.code.join }
 
   let(:valid_username) { 'username' }
   let(:invalid_username) { 'zz' }
 
-  let(:valid_difficulties) { %w[easy medium hell] }
+  let(:valid_difficulties) { console.game.class::DIFFICULTIES.keys.map(&:to_s) }
   let(:invalid_difficulty) { 'invalid_difficulty' }
 
   context 'when #registration method is called' do
@@ -51,7 +53,7 @@ RSpec.describe CodebreakerConsole do
     end
   end
 
-  context 'when #init method is called' do
+  context 'when #run method is called' do
     it 'starts main loop' do
       allow(console).to receive(:loop)
       console.init
@@ -61,7 +63,7 @@ RSpec.describe CodebreakerConsole do
   context 'when #run method is called' do
     it 'calls #new_game when game state is :new' do
       expect(console.game.state).to eq(:new)
-      allow(console).to receive(:gets).and_return('start')
+      allow(console).to receive(:gets).and_return(commands[:start])
       expect { console.run }.to output(Messages.set_username).to_stdout
     end
 
@@ -104,23 +106,23 @@ RSpec.describe CodebreakerConsole do
     end
 
     it "starts the game on 'start' command" do
-      allow(console).to receive(:gets).and_return('start')
+      allow(console).to receive(:gets).and_return(commands[:start])
       expect { console.new_game }.to output(Messages.welcome).to_stdout
     end
 
     it "displays game rules on 'rules' command" do
-      allow(console).to receive(:gets).and_return('rules')
+      allow(console).to receive(:gets).and_return(commands[:rules])
       expect { console.new_game }
         .to output(Messages.rules).to_stdout
     end
 
     it "displays game stats on 'stats' command" do
-      allow(console).to receive(:gets).and_return('stats')
+      allow(console).to receive(:gets).and_return(commands[:stats])
       expect { console.new_game }.to output(Statistics.show).to_stdout
     end
 
     it "exits on 'exit' command" do
-      allow(console).to receive(:gets).and_return('exit')
+      allow(console).to receive(:gets).and_return(commands[:exit])
       expect { console.new_game }.to output(Messages.exit_game).to_stdout.and raise_error(SystemExit)
     end
 
@@ -144,7 +146,7 @@ RSpec.describe CodebreakerConsole do
     end
 
     it "displays one digit from secret code on 'hint' command" do
-      allow(console).to receive(:gets).and_return('hint')
+      allow(console).to receive(:gets).and_return(commands[:hint])
       expect { console.start }.to output(/^[1-6]{1}$/).to_stdout
     end
 
@@ -154,7 +156,7 @@ RSpec.describe CodebreakerConsole do
     end
 
     it "exits on 'exit' command" do
-      allow(console).to receive(:gets).and_return('exit')
+      allow(console).to receive(:gets).and_return(commands[:exit])
       expect { console.start }.to output(Messages.exit_game).to_stdout.and raise_error(SystemExit)
     end
   end
@@ -166,7 +168,7 @@ RSpec.describe CodebreakerConsole do
       allow(console).to receive(:gets).and_return(valid_difficulties.first)
       console.set_difficulty
       console.game.win
-      allow(console).to receive(:gets).and_return('yes')
+      allow(console).to receive(:gets).and_return(commands[:yes])
       expect { console.save_results }.to output(Messages.results_saved).to_stdout
     end
   end

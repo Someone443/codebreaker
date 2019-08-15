@@ -10,6 +10,13 @@ module CodebreakerSmn
       hell: { attempts: 5, hints: 1 }
     }.freeze
 
+    CODE_RULES = {
+      size: 4,
+      digits: 1..6
+    }.freeze
+
+    WIN_RESULT = '++++'.freeze
+
     attr_reader :code, :state, :difficulty, :username
     attr_accessor :attempts, :hints, :hint_code
 
@@ -36,22 +43,22 @@ module CodebreakerSmn
     end
 
     def high_scores
-      attempts_total = DIFFICULTIES[@difficulty.to_sym][:attempts]
+      attempts_total = DIFFICULTIES[@difficulty][:attempts]
       attempts_used = attempts_total - @attempts
-      hints_total = DIFFICULTIES[@difficulty.to_sym][:hints]
+      hints_total = DIFFICULTIES[@difficulty][:hints]
       hints_used = hints_total - @hints
-      { name: @username, difficulty: @difficulty,
+      { name: @username, difficulty: @difficulty.to_s,
         attempts_total: attempts_total, attempts_used: attempts_used,
         hints_total: hints_total, hints_used: hints_used,
         date: Date.today }
     end
 
     def generate_code
-      @code = Array.new(4) { rand(1..6) }
+      @code = Array.new(CODE_RULES[:size]) { rand(CODE_RULES[:digits]) }
     end
 
     def generate_hint
-      @hint_code = @code.sample(DIFFICULTIES[@difficulty.to_sym][:hints])
+      @hint_code = @code.sample(DIFFICULTIES[@difficulty][:hints])
     end
 
     def guess_code(input)
@@ -66,17 +73,34 @@ module CodebreakerSmn
         @attempts -= 1
         result = CodeHandler.process_guess(@code, input)
         select_winner(result, @attempts)
+
+
+        # return win if winner?(result)
+
+        # game_over   -> т.е. изпользовать guard clause на последней попытке и не нужен будет последний else ???
       else
         game_over
       end
       result
     end
 
+
+
+    def many_attempts?
+      @attempts > 1 && @state == :started
+    end
+
+    def last_attempt?
+      @attempts == 1 && @state == :started
+    end
+
+
+
     def select_winner(result, attempts)
       if attempts.positive?
-        win if result == '++++'
+        win if result == WIN_RESULT
       else
-        result == '++++' ? win : game_over
+        result == WIN_RESULT ? win : game_over
       end
     end
 
@@ -97,9 +121,9 @@ module CodebreakerSmn
     end
 
     def difficulty=(level)
-      return unless valid_difficulty?(level, DIFFICULTIES.keys.map(&:to_s))
+      return unless valid_difficulty?(level.to_sym, DIFFICULTIES.keys)
 
-      @difficulty = level
+      @difficulty = level.to_sym
       @attempts = DIFFICULTIES[level.to_sym][:attempts]
       @hints = DIFFICULTIES[level.to_sym][:hints]
     end

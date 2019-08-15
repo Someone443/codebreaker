@@ -6,11 +6,14 @@ RSpec.describe CodebreakerSmn::Game do
   let(:win_guess) { '1234' }
   let(:invalid_guesses) { ['', 'zz', '123', '11234', '7890', Object] }
 
+  let(:valid_username) { 'valid_username' }
+  let(:valid_difficulty) { 'easy' }
+
   before do
     game.new_game
     game.start
-    game.username = 'valid_username'
-    game.difficulty = 'easy'
+    game.username = valid_username
+    game.difficulty = valid_difficulty
   end
 
   context 'with #start' do
@@ -18,12 +21,14 @@ RSpec.describe CodebreakerSmn::Game do
       expect(game.instance_variable_get(:@code)).not_to be_empty
     end
 
-    it 'saves 4 numbers secret code' do
-      expect(game.instance_variable_get(:@code).size).to eq(4)
+    it 'saves secret code with size from code rules' do
+      expect(game.instance_variable_get(:@code).size).to eq(described_class::CODE_RULES[:size])
     end
 
-    it 'saves secret code with numbers from 1 to 6' do
-      expect(game.instance_variable_get(:@code).join).to match(/[1-6]+/)
+    it 'saves secret code with numbers from code rules' do
+      game.instance_variable_get(:@code).each do |digit| 
+        expect(described_class::CODE_RULES[:digits]).to include(digit)
+      end
     end
   end
 
@@ -31,7 +36,7 @@ RSpec.describe CodebreakerSmn::Game do
     context 'when validates user guess' do
       it 'with valid guess' do
         game.instance_variable_set(:@code, game_code)
-        expect(game.guess_code(win_guess)).to eq('++++')
+        expect(game.guess_code(win_guess)).to eq(described_class::WIN_RESULT)
       end
 
       it 'with invalid guess' do
@@ -61,8 +66,8 @@ RSpec.describe CodebreakerSmn::Game do
       it 'from examples' do
         [examples_1, examples_2, examples_3, examples_4].each do |hash|
           game.start
-          game.username = 'valid_username'
-          game.difficulty = 'easy'
+          game.username = valid_username
+          game.difficulty = valid_difficulty
           game.instance_variable_set(:@code, hash[:code])
 
           hash[:inputs].each_with_index do |input, index|
@@ -99,7 +104,7 @@ RSpec.describe CodebreakerSmn::Game do
   context 'with #high_scores' do
     it 'returns current results' do
       game.guess_code(win_guess)
-      expect(game.high_scores.to_s).to eq({ name: 'valid_username', difficulty: 'easy',
+      expect(game.high_scores.to_s).to eq({ name: valid_username, difficulty: valid_difficulty,
                                             attempts_total: 15, attempts_used: 1,
                                             hints_total: 2, hints_used: 0, date: Date.today }.to_s)
     end
@@ -131,7 +136,7 @@ RSpec.describe CodebreakerSmn::Game do
 
   context 'when validates username' do
     it 'when valid name' do
-      expect(game.username).to eq('valid_username')
+      expect(game.username).to eq(valid_username)
     end
 
     it 'when invalid name' do
@@ -143,7 +148,7 @@ RSpec.describe CodebreakerSmn::Game do
 
   context 'when validates difficulty' do
     it 'when valid difficulty' do
-      game.class::DIFFICULTIES.keys.map(&:to_s).each do |difficulty|
+      game.class::DIFFICULTIES.keys.each do |difficulty|
         game.new_game
         game.difficulty = difficulty
         expect(game.difficulty).to eq(difficulty)

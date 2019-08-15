@@ -3,6 +3,22 @@
 class CodebreakerConsole
   include Validations
 
+  STATES = {
+    new: 'new_game',
+    started: 'start',
+    win: 'win',
+    game_over: 'game_over'
+  }.freeze
+
+  COMMANDS = {
+    start: 'start',
+    hint: 'hint',
+    rules: 'rules',
+    stats: 'stats',
+    exit: 'exit',
+    yes: 'yes'
+  }.freeze
+
   attr_reader :game
 
   def initialize
@@ -17,46 +33,49 @@ class CodebreakerConsole
   end
 
   def run
-    case @game.state
-    when :new then new_game
-    when :started then start
-    when :win
-      Messages.win(@game.code.join)
-      save_results
-      new_game
-    when :game_over
-      Messages.game_over(@game.code.join)
-      new_game
-    end
+    send(STATES[@game.state])
   end
 
   def new_game
     @game.new_game
 
     Messages.welcome
-    case gets.chomp
-    when 'start'
+    case user_input
+    when COMMANDS[:start]
       @game.start
       start
-    when 'rules' then Messages.rules
-    when 'stats' then Statistics.show
-    when 'exit' then exit_game
+    when COMMANDS[:rules] then Messages.rules
+    when COMMANDS[:stats] then Statistics.show
     else Messages.unknown_command
     end
   end
 
   def start
     registration
-    return unless @game.username && @game.difficulty
+    return if !(@game.username && @game.difficulty)
 
     Messages.start_game
-    input = gets.chomp
+    input = user_input
     case input
-    when /^[1-6]{4}$/ then puts @game.guess_code(input)
-    when 'hint' then puts @game.get_hint
-    when 'exit' then exit_game
+    when code_matcher then puts @game.guess_code(input)
+    when COMMANDS[:hint] then puts @game.get_hint
     else Messages.unknown_command
     end
+  end
+
+  def win
+    Messages.win(@game.code.join)
+    save_results
+    new_game
+  end
+
+  def game_over
+    Messages.game_over(@game.code.join)
+    new_game
+  end
+
+  def code_matcher
+    /^[1-6]{4}$/
   end
 
   def registration
@@ -69,36 +88,34 @@ class CodebreakerConsole
 
   def set_username
     Messages.set_username
-    input = gets.chomp
+    input = user_input
+    return Messages.invalid_username unless valid_name?(input)
 
-    case input
-    when 'exit' then exit_game
-    else
-      if valid_name?(input)
-        @game.username = input
-      else
-        Messages.invalid_username
-      end
-    end
+    @game.username = input
   end
 
   def set_difficulty
     Messages.set_difficulty
-    level = gets.chomp
+    level = user_input
+    return unless valid_difficulty?(level.to_sym, @game.class::DIFFICULTIES.keys)
 
-    case level
-    when 'exit' then exit_game
-    else @game.difficulty = level if valid_difficulty?(level, @game.class::DIFFICULTIES.keys.map(&:to_s))
-    end
+    @game.difficulty = level
   end
 
   def save_results
     Messages.save_results
-    case gets.chomp
-    when /^[Yy]|[Yy]es$/
+    case user_input
+    when COMMANDS[:yes]
       Statistics.save(@game.high_scores)
       Messages.results_saved
     end
+  end
+
+  def user_input
+    input = gets.chomp
+    exit_game if input == COMMANDS[:exit]
+
+    input
   end
 
   def exit_game
