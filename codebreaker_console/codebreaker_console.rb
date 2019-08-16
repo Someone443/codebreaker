@@ -1,0 +1,135 @@
+# frozen_string_literal: true
+
+class CodebreakerConsole
+  include Validations
+
+  STATES = {
+    new: 'new_game',
+    started: 'start',
+    win: 'win',
+    game_over: 'game_over'
+  }.freeze
+
+  COMMANDS = {
+    start: 'start',
+    hint: 'hint',
+    rules: 'rules',
+    stats: 'stats',
+    exit: 'exit',
+    yes: 'yes'
+  }.freeze
+
+  attr_reader :game
+
+  def initialize
+    @game = CodebreakerSmn::Game.new
+  end
+
+  def init
+    Messages.init
+    loop do
+      send(STATES[@game.state])
+    end
+  end
+
+  private
+
+  def new_game
+    @game.new_game
+
+    Messages.welcome
+    case user_input
+    when COMMANDS[:start]
+      @game.start
+      start
+    when COMMANDS[:rules] then Messages.rules
+    when COMMANDS[:stats] then Statistics.show
+    else Messages.unknown_command
+    end
+  end
+
+  def start
+    registration
+    return if !(@game.username && @game.difficulty)
+
+    Messages.start_game
+    input = user_input
+    case input
+    when code_matcher then puts @game.guess_code(input)
+    when COMMANDS[:hint] then puts @game.get_hint
+    else Messages.unknown_command
+    end
+  end
+
+  def registration
+    if @game.username
+      set_difficulty unless @game.difficulty
+    else
+      set_username
+    end
+  end
+
+  def set_username
+    Messages.set_username
+    input = user_input
+    return Messages.invalid_username unless valid_name?(input)
+
+    @game.username = input
+  end
+
+  def set_difficulty
+    Messages.set_difficulty
+    level = user_input
+    return unless valid_difficulty?(level.to_sym, @game.class::DIFFICULTIES.keys)
+
+    @game.difficulty = level
+  end
+
+  def code_matcher
+    /^[1-6]{4}$/
+  end
+
+  def win
+    Messages.win(@game.code.join)
+    save_results
+    new_game
+  end
+
+  def game_over
+    Messages.game_over(@game.code.join)
+    new_game
+  end
+
+  def save_results
+    Messages.save_results
+    return if user_input != COMMANDS[:yes]
+
+    Statistics.save(@game.statistics)
+    Messages.results_saved
+  end
+
+  def user_input
+    input = gets.chomp
+    exit_game if input == COMMANDS[:exit]
+
+    input
+  end
+
+  def exit_game
+    Messages.exit_game
+    exit
+  end
+
+  def valid_name?(name)
+    not_empty_string(name) &&
+      valid_length(
+        input: name,
+        from: @game.class::USERNAME_RULES[:min_length],
+        to: @game.class::USERNAME_RULES[:max_length]
+      )
+  end
+
+  def valid_difficulty?(level, difficulty_array)
+    difficulty_array.include?(level)
+  end
+end
