@@ -5,8 +5,9 @@ SimpleCov.start do
 end
 
 Dir[Dir.pwd + '/helpers/*.rb'].each { |f| require f }
-require_relative '../codebreaker_console.rb'
+Dir[Dir.pwd + '/presenters/*.rb'].each { |f| require f }
 require_relative '../config/setup'
+require_relative '../codebreaker_console.rb'
 
 RSpec.configure do |config|
   config.expect_with :rspec do |expectations|

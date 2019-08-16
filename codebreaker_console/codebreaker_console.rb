@@ -28,13 +28,11 @@ class CodebreakerConsole
   def init
     Messages.init
     loop do
-      run
+      send(STATES[@game.state])
     end
   end
 
-  def run
-    send(STATES[@game.state])
-  end
+  private
 
   def new_game
     @game.new_game
@@ -63,21 +61,6 @@ class CodebreakerConsole
     end
   end
 
-  def win
-    Messages.win(@game.code.join)
-    save_results
-    new_game
-  end
-
-  def game_over
-    Messages.game_over(@game.code.join)
-    new_game
-  end
-
-  def code_matcher
-    /^[1-6]{4}$/
-  end
-
   def registration
     if @game.username
       set_difficulty unless @game.difficulty
@@ -102,6 +85,21 @@ class CodebreakerConsole
     @game.difficulty = level
   end
 
+  def code_matcher
+    /^[1-6]{4}$/
+  end
+
+  def win
+    Messages.win(@game.code.join)
+    save_results
+    new_game
+  end
+
+  def game_over
+    Messages.game_over(@game.code.join)
+    new_game
+  end
+
   def save_results
     Messages.save_results
     return if user_input != COMMANDS[:yes]
@@ -120,5 +118,18 @@ class CodebreakerConsole
   def exit_game
     Messages.exit_game
     exit
+  end
+
+  def valid_name?(name)
+    not_empty_string(name) &&
+      valid_length(
+        input: name,
+        from: @game.class::USERNAME_RULES[:min_length],
+        to: @game.class::USERNAME_RULES[:max_length]
+      )
+  end
+
+  def valid_difficulty?(level, difficulty_array)
+    difficulty_array.include?(level)
   end
 end

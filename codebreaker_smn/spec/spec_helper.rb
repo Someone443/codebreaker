@@ -6,7 +6,8 @@ end
 require 'bundler/setup'
 require 'codebreaker_smn'
 
-Dir[Dir.pwd + '/app/*.rb'].each { |f| require f }
+Dir[Dir.pwd + '/lib/*.rb'].each { |f| require f }
+require_relative '../lib/codebreaker_smn/config/setup'
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure

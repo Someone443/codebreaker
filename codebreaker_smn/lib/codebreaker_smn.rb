@@ -5,14 +5,19 @@ module CodebreakerSmn
     include ValidationHelper
 
     DIFFICULTIES = {
-      easy: { attempts: 15, hints: 2 },
+      hell: { attempts: 5, hints: 1 },
       medium: { attempts: 10, hints: 1 },
-      hell: { attempts: 5, hints: 1 }
+      easy: { attempts: 15, hints: 2 }
     }.freeze
 
     CODE_RULES = {
       size: 4,
       digits: 1..6
+    }.freeze
+
+    USERNAME_RULES = {
+      min_length: 3,
+      max_length: 20
     }.freeze
 
     WIN_RESULT = '++++'.freeze
@@ -98,6 +103,10 @@ module CodebreakerSmn
       @hint_code ||= @code.sample(DIFFICULTIES[@difficulty][:hints])
     end
 
+    def take_attempt
+      @attempts -= 1
+    end
+
     def select_winner(result)
       if many_attempts?
         win if winner?(result)
@@ -106,10 +115,6 @@ module CodebreakerSmn
       else
         game_over
       end
-    end
-
-    def take_attempt
-      @attempts -= 1
     end
 
     def many_attempts?
@@ -126,6 +131,30 @@ module CodebreakerSmn
 
     def reset_params
       @username, @difficulty, @hint_code = nil
+    end
+
+    def valid_name?(username)
+      not_empty_string(username) &&
+        valid_length(
+          input: username,
+          from: USERNAME_RULES[:min_length],
+          to: USERNAME_RULES[:max_length]
+        )
+    end
+
+    def valid_difficulty?(level, difficulty_array)
+      difficulty_array.include?(level)
+    end
+
+    def valid_guess?(input)
+      not_empty_string(input) &&
+        positive_integers(input.split('').map(&:to_i)) &&
+        valid_digits(input.split('').map(&:to_i), CODE_RULES[:digits]) &&
+        valid_length(
+          input: input,
+          from: CODE_RULES[:size],
+          to: CODE_RULES[:size]
+        )
     end
   end
 end

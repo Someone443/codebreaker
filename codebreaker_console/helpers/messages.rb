@@ -1,10 +1,13 @@
+# frozen_string_literal: true
+
 class Messages
   def self.init
     puts 'Welcome to Codebreaker game.'
   end
 
   def self.welcome
-    puts "Please, enter 'start' to start new game,\n" \
+    puts "Please, enter:\n" \
+         "'start' to start new game,\n" \
          "'rules' to read game rules,\n" \
          "'stats' to display high scores,\n" \
          "'exit' to exit the game."

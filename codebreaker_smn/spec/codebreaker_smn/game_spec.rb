@@ -10,7 +10,7 @@ RSpec.describe CodebreakerSmn::Game do
   let(:invalid_guesses) { ['', 'zz', '123', '11234', '7890', Object] }
 
   let(:valid_username) { 'valid_username' }
-  let(:invalid_username) { 'qz' }  
+  let(:invalid_username) { 'qz' }
   let(:valid_difficulty) { game_difficulties.keys.sample }
   let(:invalid_difficulty) { 'zz' }
 
@@ -21,7 +21,7 @@ RSpec.describe CodebreakerSmn::Game do
     game.difficulty = valid_difficulty
   end
 
-  context 'with #start' do
+  context 'when #start method is called' do
     it 'generates secret code' do
       expect(game.code).not_to be_empty
     end
@@ -37,14 +37,14 @@ RSpec.describe CodebreakerSmn::Game do
     end
   end
 
-  context 'with #guess_code' do
-    context 'when validates user guess' do
-      it 'with valid guess' do
+  context 'when #guess_code method is called and' do
+    context 'when it validates user guess' do
+      it 'validates valid guess' do
         game.instance_variable_set(:@code, game_code)
         expect(game.guess_code(win_guess)).to eq(described_class::WIN_RESULT)
       end
 
-      it 'with invalid guess' do
+      it 'validates invalid guess' do
         game.instance_variable_set(:@code, game_code)
         invalid_guesses.each do |invalid_guess|
           expect(game.guess_code(invalid_guess)).to be_nil
@@ -52,7 +52,7 @@ RSpec.describe CodebreakerSmn::Game do
       end
     end
 
-    context 'when processes user guesses' do
+    context 'when it processes user guesses' do
       let(:examples) do
         [
           { code: [6, 5, 4, 3], inputs: %w[5643 6411 6544 3456 6666 2666 2222],
@@ -66,7 +66,7 @@ RSpec.describe CodebreakerSmn::Game do
         ]
       end
 
-      it 'from examples' do
+      it 'works well with data from examples' do
         examples.each do |example|
           game.start
           game.username = valid_username
@@ -80,8 +80,8 @@ RSpec.describe CodebreakerSmn::Game do
       end
     end
 
-    context "when processes user's last attempt" do
-      it do
+    context "when it processes user's last attempt" do
+      it 'works well' do
         game.instance_variable_set(:@code, game_code)
         game.instance_variable_set(:@attempts, 1)
         expect(game.guess_code(win_guess)).to eq(described_class::WIN_RESULT)
@@ -89,7 +89,7 @@ RSpec.describe CodebreakerSmn::Game do
     end
   end
 
-  context 'with #get_hint' do
+  context 'when #get_hint method is called' do
     it 'returns digit if hints available' do
       expect(hinted_digit.to_s.size).to eq(1)
       expect(described_class::CODE_RULES[:digits]).to include(hinted_digit)
@@ -105,7 +105,7 @@ RSpec.describe CodebreakerSmn::Game do
     end
   end
 
-  context 'with #statistics' do
+  context 'when #statistics method is called' do
     it 'returns current results' do
       game.guess_code(win_guess)
       expect(game.statistics.to_s).to eq({ name: valid_username, difficulty: valid_difficulty.to_s,
@@ -140,11 +140,11 @@ RSpec.describe CodebreakerSmn::Game do
   end
 
   context 'when validates username' do
-    it 'when valid name' do
+    it 'validates valid name' do
       expect(game.username).to eq(valid_username)
     end
 
-    it 'when invalid name' do
+    it 'validates invalid name' do
       game.new_game
       game.username = invalid_username
       expect(game.username).to be_nil
@@ -152,15 +152,15 @@ RSpec.describe CodebreakerSmn::Game do
   end
 
   context 'when validates difficulty' do
-    it 'when valid difficulty' do
-      game.class::DIFFICULTIES.keys.each do |difficulty|
+    it 'validates valid difficulty' do
+      game_difficulties.each_key do |difficulty|
         game.new_game
         game.difficulty = difficulty
         expect(game.difficulty).to eq(difficulty)
       end
     end
 
-    it 'when invalid difficulty' do
+    it 'validates invalid difficulty' do
       game.new_game
       game.difficulty = invalid_difficulty
       expect(game.difficulty).to be_nil
